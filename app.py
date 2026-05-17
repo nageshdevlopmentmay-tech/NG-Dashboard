@@ -4,9 +4,9 @@ import yfinance as yf
 import time
 from datetime import datetime
 
-# 1. Setup the Web Page
-st.set_page_config(page_title="NG Cloud Matrix", layout="centered")
-st.title("🔥 Natural Gas Matrix")
+# 1. Setup the Web Page (Switched to 'wide' layout to fit multiple assets)
+st.set_page_config(page_title="Commodity Cloud Matrix", layout="wide")
+st.title("🌐 Multi-Commodity Matrix")
 st.write("Secure, dependency-free dashboard auto-refreshing every 3 minutes.")
 
 # --- Custom Math Functions ---
@@ -26,10 +26,11 @@ def calc_rsi(close_prices, periods=14):
     return rsi.iloc[-1]
 # -----------------------------
 
-def get_status():
+# Refactored function to accept any ticker symbol
+def get_status(ticker_symbol):
     try:
         # Fetch 1-Minute Data
-        ticker = yf.Ticker("NG=F")
+        ticker = yf.Ticker(ticker_symbol)
         df_1m = ticker.history(interval="1m", period="5d")
         
         # Resample timeframes
@@ -53,21 +54,22 @@ def get_status():
     except Exception as e:
         return None, None, None, None, None
 
+# Dictionary of assets and their Yahoo Finance tickers
+assets = {
+    "🔥 Natural Gas": "NG=F",
+    "🛢️ Crude Oil (WTI)": "CL=F",
+    "🥇 Gold": "GC=F",
+    "🥈 Silver": "SI=F"
+}
+
 # 2. Create the Dashboard Interface
 placeholder = st.empty()
 
 with placeholder.container():
-    tide, wave, rsi15, ripple, rsi3 = get_status()
+    st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} UTC")
+    st.write("---")
     
-    if tide:
-        st.subheader(f"📊 1H Tide: {tide}")
-        st.subheader(f"🌊 15M Wave: {wave} (RSI: {rsi15:.1f})")
-        st.subheader(f"💧 3M Ripple: {ripple} (RSI: {rsi3:.1f})")
-        
-        st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} UTC")
-    else:
-        st.error("Fetching secure market data... Please wait.")
-
-# 3. Force Web Browser to Reload
-time.sleep(180)
-st.rerun()
+    # Create two columns so the assets sit nicely side-by-side
+    col1, col2 = st.columns(2)
+    
+    # Loop through our
