@@ -9,7 +9,7 @@ st.set_page_config(page_title="NG Cloud Matrix", layout="centered")
 st.title("🔥 Natural Gas Matrix")
 st.write("Secure, dependency-free dashboard auto-refreshing every 3 minutes.")
 
-# --- Custom Math Functions (Bypasses the need for pandas-ta) ---
+# --- Custom Math Functions ---
 def calc_macd(close_prices):
     ema_fast = close_prices.ewm(span=12, adjust=False).mean()
     ema_slow = close_prices.ewm(span=26, adjust=False).mean()
@@ -24,7 +24,7 @@ def calc_rsi(close_prices, periods=14):
     rs = gain / loss
     rsi = 100 - (100 / (1 + rs))
     return rsi.iloc[-1]
-# ---------------------------------------------------------------
+# -----------------------------
 
 def get_status():
     try:
@@ -68,6 +68,6 @@ with placeholder.container():
     else:
         st.error("Fetching secure market data... Please wait.")
 
-# 3. Force Web Browser to Reload Every 3 Minutes
+# 3. Force Web Browser to Reload
 time.sleep(180)
 st.rerun()
