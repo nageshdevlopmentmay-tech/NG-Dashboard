@@ -5,7 +5,7 @@ import requests
 import time
 from datetime import datetime
 
-# --- Stealth Layer: Disguise the Cloud Server as a standard Web Browser ---
+# --- Stealth Layer: Disguise the Cloud Server as a Web Browser ---
 class SafeSession(requests.Session):
     def __init__(self, *args, **kwargs):
         super(SafeSession, self).__init__(*args, **kwargs)
@@ -16,7 +16,7 @@ class SafeSession(requests.Session):
             'Connection': 'keep-alive',
         }
 session = SafeSession()
-# --------------------------------------------------------------------------
+# -----------------------------------------------------------------
 
 # 1. Setup the Web Page
 st.set_page_config(page_title="Commodity Cloud Matrix", layout="wide")
@@ -44,15 +44,18 @@ def calc_rsi(close_prices, periods=14):
 
 def get_status(ticker_symbol):
     try:
-        # Pass the stealth session into the Yahoo Finance request
         ticker = yf.Ticker(ticker_symbol, session=session)
-        df_1m = ticker.history(interval="1m", period="5d")
         
-        if df_1m.empty:
-            return None, None, None, None, None
+        # FIX: Fetch 1-Hour data over 1 full month to guarantee 26+ periods for MACD
+        df_1h = ticker.history(interval="1h", period="1mo")
+        
+        # FIX: Fetch 1-Minute data over the max 7 days for the shorter waves
+        df_1m = ticker.history(interval="1m", period="7d")
+        
+        if df_1h.empty or df_1m.empty:
+            return "Data Empty", None, None, None, None
             
-        # Resample timeframes
-        df_1h = df_1m.resample('1h').agg({'Open':'first', 'High':'max', 'Low':'min', 'Close':'last'}).dropna()
+        # Resample the shorter timeframes
         df_15m = df_1m.resample('15min').agg({'Open':'first', 'High':'max', 'Low':'min', 'Close':'last'}).dropna()
         df_3m = df_1m.resample('3min').agg({'Open':'first', 'High':'max', 'Low':'min', 'Close':'last'}).dropna()
         
@@ -68,7 +71,7 @@ def get_status(ticker_symbol):
         
         return tide_status, wave_status, rsi_15m, ripple_status, rsi_3m
     except Exception as e:
-        return None, None, None, None, None
+        return f"Error: {e}", None, None, None, None
 
 # Define Assets
 assets = {
@@ -94,12 +97,14 @@ with placeholder.container():
             st.subheader(asset_name)
             tide, wave, rsi15, ripple, rsi3 = get_status(symbol)
             
-            if tide and rsi15 and rsi3:
+            # Display data if valid, otherwise show the exact error message
+            if tide and rsi15 and rsi3 and not tide.startswith("Error") and tide != "Data Empty":
                 st.markdown(f"**📊 1H Tide:** {tide}")
                 st.markdown(f"**🌊 15M Wave:** {wave} (RSI: {rsi15:.1f})")
                 st.markdown(f"**💧 3M Ripple:** {ripple} (RSI: {rsi3:.1f})")
             else:
-                st.warning(f"Market Closed / Connecting to {asset_name} data...")
+                error_msg = tide if (tide and (tide.startswith("Error") or tide == "Data Empty")) else "Waiting for market data..."
+                st.warning(f"Market Closed / Connecting... ({error_msg})")
             
             st.write("---")
 
