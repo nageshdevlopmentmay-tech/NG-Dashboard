@@ -1,27 +1,13 @@
 import streamlit as st
 import pandas as pd
 import yfinance as yf
-import requests
 import time
 from datetime import datetime
-
-# --- Stealth Layer: Disguise the Cloud Server as a Web Browser ---
-class SafeSession(requests.Session):
-    def __init__(self, *args, **kwargs):
-        super(SafeSession, self).__init__(*args, **kwargs)
-        self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Connection': 'keep-alive',
-        }
-session = SafeSession()
-# -----------------------------------------------------------------
 
 # 1. Setup the Web Page
 st.set_page_config(page_title="Commodity Cloud Matrix", layout="wide")
 st.title("🌐 Multi-Commodity Matrix")
-st.write("Secure, stealth dashboard auto-refreshing every 3 minutes.")
+st.write("Secure dashboard auto-refreshing every 3 minutes.")
 
 # --- Custom Math Functions ---
 def calc_macd(close_prices):
@@ -44,12 +30,13 @@ def calc_rsi(close_prices, periods=14):
 
 def get_status(ticker_symbol):
     try:
-        ticker = yf.Ticker(ticker_symbol, session=session)
+        # Removed the custom session. Letting yfinance handle stealth natively.
+        ticker = yf.Ticker(ticker_symbol)
         
-        # FIX: Fetch 1-Hour data over 1 full month to guarantee 26+ periods for MACD
+        # Fetch 1-Hour data over 1 full month to guarantee 26+ periods for MACD
         df_1h = ticker.history(interval="1h", period="1mo")
         
-        # FIX: Fetch 1-Minute data over the max 7 days for the shorter waves
+        # Fetch 1-Minute data over the max 7 days for the shorter waves
         df_1m = ticker.history(interval="1m", period="7d")
         
         if df_1h.empty or df_1m.empty:
